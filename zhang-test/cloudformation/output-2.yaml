@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Output Practice - EC2 Stack
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0f36dcfcc94112ea1
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SubnetId: 
+        Fn::ImportValue: Output-Subnet1a-ID
+      Tags:
+        - Key: Name
+          Value: output-ec2

@@ -1,0 +1,55 @@
+Parameters:
+
+  PrefixName:
+    Type: String
+    Description: Prefix for all resource names
+    Default: dp
+    AllowedValues:
+      - dp
+      - zzw
+      - test
+
+Mappings:
+  SubnetCidrMap:
+    ap-northeast-1a:
+      Cidr: 10.0.1.0/24
+    ap-northeast-1c:
+      Cidr: 10.0.2.0/24
+
+Resources:
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${PrefixName}-vpc"
+
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: !FindInMap 
+        - SubnetCidrMap
+        - ap-northeast-1a
+        - Cidr
+      Tags:
+        - Key: Name
+          Value: !Sub "${PrefixName}-subnet-1a"
+
+  Subnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: ap-northeast-1c
+      CidrBlock: !FindInMap 
+        - SubnetCidrMap
+        - ap-northeast-1c
+        - Cidr
+      Tags:
+        - Key: Name
+          Value: !Sub "${PrefixName}-subnet-1c"

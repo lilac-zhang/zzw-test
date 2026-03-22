@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Mapping + Pseudo Parameter Practice (using your AccountId)
+
+Mappings:
+
+  # 1. 根据 AccountId 判定环境
+  env:
+    name:
+      "558931385457": dev
+      "000000000000": stg
+      "999999999999": prd
+
+  # 2. 每个环境对应不同 CIDR
+  dev:
+    cidr:
+      vpc: 10.0.0.0/16
+      subnet1a: 10.0.1.0/24
+      subnet1c: 10.0.2.0/24
+
+  stg:
+    cidr:
+      vpc: 10.1.0.0/16
+      subnet1a: 10.1.1.0/24
+      subnet1c: 10.1.2.0/24
+
+  prd:
+    cidr:
+      vpc: 10.2.0.0/16
+      subnet1a: 10.2.1.0/24
+      subnet1c: 10.2.2.0/24
+
+Resources:
+
+  # --- VPC ---
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 
+        Fn::FindInMap:
+          - !FindInMap [env, name, !Ref AWS::AccountId]   # 1. 得到 dev/stg/prd
+          - cidr                                          # 2. 取 cidr 段
+          - vpc                                           # 3. 取 vpc 字段
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-dp-vpc"
+
+  # --- Subnet 1a ---
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock:
+        Fn::FindInMap:
+          - !FindInMap [env, name, !Ref AWS::AccountId]
+          - cidr
+          - subnet1a
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-subnet-1a"
+
+  # --- Subnet 1c ---
+  Subnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock:
+        Fn::FindInMap:
+          - !FindInMap [env, name, !Ref AWS::AccountId]
+          - cidr
+          - subnet1c
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-subnet-1c"

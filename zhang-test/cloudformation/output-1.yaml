@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Output Practice - Network Stack
+
+Resources:
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: "output-vpc"
+
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: "output-subnet-1a"
+
+  Subnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: "output-subnet-1c"
+
+Outputs:
+
+  VpcId:
+    Value: !Ref MyVPC
+    Export:
+      Name: Output-VPC-ID
+
+  Subnet1aId:
+    Value: !Ref Subnet1a
+    Export:
+      Name: Output-Subnet1a-ID
+
+  Subnet1cId:
+    Value: !Ref Subnet1c
+    Export:
+      Name: Output-Subnet1c-ID

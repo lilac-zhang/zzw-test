@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Step 2: EC2 Stack using Imported Values'
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair
+
+Resources:
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH
+      VpcId: !ImportValue Output-VPC-ID 
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  MyEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0f36dcfcc94112ea1 
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SubnetId: !ImportValue Output-Subnet1a-ID 
+      SecurityGroupIds:
+        - !Ref MySG
+      Tags:
+        - Key: Name
+          Value: output-ec2
+
+Outputs:
+  ServerIP:
+    Value: !GetAtt MyEC2.PublicIp
+    Description: Public IP of the server

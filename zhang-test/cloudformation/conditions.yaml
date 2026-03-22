@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Conditions practice with VPC and Subnets (dev creates subnet1c)
+
+Mappings:
+
+  # ✔ 修改点 1：声明你的账号属于 dev
+  EnvMap:
+    name:
+      "558931385457": dev     # ← 修改：将你的账号标记为 dev
+      "000000000000": stg
+      "999999999999": prd
+
+  # 每个环境对应不同 CIDR
+  dev:
+    cidr:
+      vpc: 10.0.0.0/16
+      subnet1a: 10.0.1.0/24
+      subnet1c: 10.0.2.0/24
+
+  stg:
+    cidr:
+      vpc: 10.1.0.0/16
+      subnet1a: 10.1.1.0/24
+      subnet1c: 10.1.2.0/24
+
+  prd:
+    cidr:
+      vpc: 10.2.0.0/16
+      subnet1a: 10.2.1.0/24
+      subnet1c: 10.2.2.0/24
+
+# ===========================
+# CONDITIONS
+# ===========================
+
+Conditions:
+
+  # ✔ 修改点 2：Condition 从检查 prd 改为检查 dev
+  IsDev: !Equals
+    - !FindInMap [EnvMap, name, !Ref AWS::AccountId]
+    - dev     # ← 修改：将 prd 改为 dev，表示 dev 环境创建资源
+
+Resources:
+
+  # --- VPC ---
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 
+        Fn::FindInMap:
+          - !FindInMap [EnvMap, name, !Ref AWS::AccountId]
+          - cidr
+          - vpc
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-condition-vpc"
+
+  # --- Subnet (1a) 始终创建 ---
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock:
+        Fn::FindInMap:
+          - !FindInMap [EnvMap, name, !Ref AWS::AccountId]
+          - cidr
+          - subnet1a
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-subnet-1a"
+
+  # --- Subnet (1c) 只有 dev 环境 才创建 ---
+  Subnet1c:
+    Condition: IsDev     # ← 修改点 3：使用新的 Condition
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock:
+        Fn::FindInMap:
+          - !FindInMap [EnvMap, name, !Ref AWS::AccountId]
+          - cidr
+          - subnet1c
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::AccountId}-subnet-1c"

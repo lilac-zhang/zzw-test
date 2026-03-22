@@ -1,0 +1,49 @@
+Parameters:
+
+  VpcName:
+    Type: String
+    Description: Name tag for the VPC
+    Default: dp-vpc
+    AllowedValues:
+      - dp-vpc
+      - dp-vpc-zzw
+      - dp-vpc-test
+
+  VpcCidr:
+    Type: String
+    Description: CIDR block of the VPC
+    Default: 10.0.0.0/16
+
+  IgwName:
+    Type: String
+    Description: Base name for the IGW
+    Default: dp-igw
+    AllowedValues:
+      - dp-igw
+      - dp-igw-zzw
+      - dp-igw-test
+
+Resources:
+
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Ref VpcName
+
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${IgwName}-${VpcName}"
+
+  MyIgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyIGW

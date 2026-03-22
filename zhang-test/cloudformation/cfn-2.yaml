@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Compute Stack - EC2 + SG
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, stg, prd]
+    Default: dev
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Conditions:
+  IsPrd: !Equals [!Ref Env, prd]
+
+Resources:
+
+  ### Security Group ###
+  MySG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH
+      VpcId: 
+        Fn::ImportValue: !Sub "${Env}-VpcId"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-sg"
+
+  ### EC2 in Subnet 1a ###
+  EC2A:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0f36dcfcc94112ea1
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SubnetId: 
+        Fn::ImportValue: !Sub "${Env}-Subnet1a-ID"
+      SecurityGroupIds:
+        - !Ref MySG
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-ec2-1a"
+
+  ### EC2 in Subnet 1c (PRD ONLY) ###
+  EC2C:
+    Condition: IsPrd
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0f36dcfcc94112ea1
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      SubnetId: 
+        Fn::ImportValue: !Sub "${Env}-Subnet1c-ID"
+      SecurityGroupIds:
+        - !Ref MySG
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-ec2-1c"

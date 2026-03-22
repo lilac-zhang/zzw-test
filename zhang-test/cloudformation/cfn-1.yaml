@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Network Stack for Multi-Env CFN Practice
+
+Parameters:
+  Env:
+    Type: String
+    AllowedValues: [dev, stg, prd]
+    Default: dev
+
+Mappings:
+  CidrMap:
+    dev:
+      VpcCidr: "10.0.0.0/16"
+      Subnet1a: "10.0.1.0/24"
+      Subnet1c: "10.0.2.0/24"
+    stg:
+      VpcCidr: "10.1.0.0/16"
+      Subnet1a: "10.1.1.0/24"
+      Subnet1c: "10.1.2.0/24"
+    prd:
+      VpcCidr: "10.2.0.0/16"
+      Subnet1a: "10.2.1.0/24"
+      Subnet1c: "10.2.2.0/24"
+
+Resources:
+
+  ### VPC ###
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [CidrMap, !Ref Env, VpcCidr]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-vpc"
+
+  ### Internet Gateway ###
+  MyIGW:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-igw"
+
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyIGW
+
+  ### Subnet 1a ###
+  Subnet1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !FindInMap [CidrMap, !Ref Env, Subnet1a]
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-subnet-1a"
+
+  ### Subnet 1c ###
+  Subnet1c:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: !FindInMap [CidrMap, !Ref Env, Subnet1c]
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-subnet-1c"
+
+  ### Route Table for Subnet 1a ###
+  RTB1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-rtb-1a"
+
+  RouteToIGW1a:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RTB1a
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref MyIGW
+
+  Assoc1a:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1a
+      RouteTableId: !Ref RTB1a
+
+  ### Route Table for Subnet 1c ###
+  RTB1c:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-rtb-1c"
+
+  RouteToIGW1c:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RTB1c
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref MyIGW
+
+  Assoc1c:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1c
+      RouteTableId: !Ref RTB1c
+
+Outputs:
+  VPCID:
+    Value: !Ref MyVPC
+    Export:
+      Name: !Sub "${Env}-VpcId"
+
+  Subnet1AID:
+    Value: !Ref Subnet1a
+    Export:
+      Name: !Sub "${Env}-Subnet1a-ID"
+
+  Subnet1CID:
+    Value: !Ref Subnet1c
+    Export:
+      Name: !Sub "${Env}-Subnet1c-ID"
